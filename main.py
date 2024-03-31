@@ -45,6 +45,23 @@ class Expense:
         return f"Title: {self.title}, Amount: {self.amount}"
 
 
+class Sheet:
+
+    def __init__(self, name):
+        self.name = name
+        self.participants = []
+        self.expenses = []
+
+    def add_expense(self, expense):
+        self.expenses.append(expense)
+
+    def add_participant(self, participant):
+        self.participants.append(participant)
+
+    def __str__(self):
+        return f"Sheet name : {self.name}"
+
+
 def divide_absolutely(expense_total_amount, participants):
     remaining_amount = expense_total_amount
     for participant in participants:
@@ -88,10 +105,6 @@ def handle_spend():
     expense.add_participants(participants)
     expense.add_liable_participants(participants)
 
-    print("======================================================")
-    for index, participant in enumerate(participants, start=1):
-        print(f"{index}. {participant.name}")
-
     payers = get_payers(expense, participants)
     expense.add_payers(payers)
 
@@ -119,6 +132,9 @@ def print_all(participants):
 
 
 def get_payers(expense, participants):
+    print("======================================================")
+    for index, participant in enumerate(participants, start=1):
+        print(f"{index}. {participant.name}")
     print(f"Select all the participants who paid for the expense [{expense.title}] : ")
     payer_selected_string = input("Enter the Sno. of the participants : ")
     payer_selected_indices = [int(num) for num in payer_selected_string.split()]
@@ -145,8 +161,72 @@ def get_participants():
     return participants
 
 
+def get_liable_participants(participants):
+    liable_participants = []
+
+    for participant in participants:
+        check = input(f"Should {participant.name} pay for this ? (y/n) : ")
+        if check == "y":
+            liable_participants.append(participant)
+
+    return liable_participants
+
+
+def print_sheet(sheet):
+    print("--------------------------------------------")
+    print(f"Sheet Name : {sheet.name}")
+    print("--------------------------------------------")
+
+    for expense in sheet.expenses:
+        print("***************************************")
+        print(f"Expense title : {expense.title}")
+        print(f"Expense Amount : {expense.amount}")
+        print("***************************************")
+
+    for participants in sheet.participants:
+        print(participants)
+
 def handle_sheet():
-    pass
+    print("**********************************************")
+    name = input("Enter the name of sheet : ")
+    participants = get_participants()
+
+    sheet = Sheet(name)
+    sheet.participants = participants
+
+    reenter = 'y'
+
+    while reenter == 'y':
+        title = input("Enter the expense title : ")
+        amount = float(input(f"Enter amount for expense [{title}] : "))
+        expense = Expense(title, amount)
+
+        expense.add_participants(sheet.participants)
+        payers = get_payers(expense, expense.participants)
+        expense.add_payers(payers)
+
+        liable_participants = get_liable_participants(expense.participants)
+
+        print("How do you want to divide the payment?")
+        division_options = ["Divide by Exact Amount", "Divide by Share Percentage", "Divide equally"]
+        for index, division_option in enumerate(division_options, start=1):
+            print(f"{index}. {division_option}")
+
+        selected_division_option = int(input("Enter the Sno. of your selected option: "))
+
+        if selected_division_option == 1:
+            liable_participants = divide_absolutely(expense.amount, liable_participants)
+        elif selected_division_option == 2:
+            liable_participants = divide_percentage_share(expense.amount, liable_participants)
+        elif selected_division_option == 3:
+            liable_participants = divide_equally(expense.amount, liable_participants)
+
+        expense.add_liable_participants(liable_participants)
+
+        sheet.add_expense(expense)
+        reenter = input("Would you like to add more expenses? (y/n) : ")
+
+    print_sheet(sheet)
 
 
 def create_expense():
